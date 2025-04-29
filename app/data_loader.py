@@ -2,17 +2,14 @@ import pandas as pd
 
 import aiohttp
 
+import asyncio
+
 import io
-
-
-CSV_URL = "https://ourworldindata.org/grapher/crude-birth-rate.csv?v=1&csvType=full&useColumnShortNames=false"
-
-DATAFRAME = pd.DataFrame()
 
 
 async def fetch_csv():
 
-    global DATAFRAME
+    CSV_URL = "https://ourworldindata.org/grapher/crude-birth-rate.csv?v=1&csvType=full&useColumnShortNames=false"
 
     async with aiohttp.ClientSession() as session:
 
@@ -26,9 +23,7 @@ async def fetch_csv():
 
                     df = pd.read_csv(io.BytesIO(content))
 
-                    DATAFRAME = df
-
-                    print(f"Data loaded successfully, DataFrame size: {len(DATAFRAME)}")
+                    print(f"Data loaded successfully, DataFrame size: {len(df)}")
 
                 except Exception as e:
 
@@ -37,3 +32,6 @@ async def fetch_csv():
             else:
 
                 print(f"Error downloading data: {resp.status}")
+
+
+asyncio.run(fetch_csv())
