@@ -4,45 +4,32 @@ from fastapi.responses import HTMLResponse
 
 from fastapi.templating import Jinja2Templates
 
-import asyncio
+from app.data_loader import DataLoader
 
 from datetime import datetime
-
-
-from app.data_loader import fetch_csv, DATAFRAME
 
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="app/templates")
 
+data_loader = DataLoader()
+
 
 @app.on_event("startup")
 
 async def startup_event():
 
-    await fetch_csv()
+    await data_loader.fetch_csv()
 
 
 @app.get("/", response_class=HTMLResponse)
 
 async def home(request: Request):
 
-    if DATAFRAME.empty:
+    table_html, dataframe_size = await data_loader.get_data_html()
 
-        table_html = "<p>No data available.</p>"
-
-    else:
-
-        df = DATAFRAME.head(100)  # Show only the first 100 records
-
-        table_html = df.to_html(classes="table table-striped table-bordered table-hover", 
-
-                                index=False, 
-
-                                border=0,
-
-                                justify="center")
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     
 
@@ -52,9 +39,9 @@ async def home(request: Request):
 
         "table": table_html,
 
-        "dataframe_size": len(DATAFRAME),
+        "dataframe_size": dataframe_size,
 
-        "current_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        "current_time": current_time
 
     })
 
@@ -63,6 +50,6 @@ async def home(request: Request):
 
 async def refresh_data():
 
-    await fetch_csv()
+    await data_loader.fetch_csv()
 
     return {"message": "Data updated successfully"}
