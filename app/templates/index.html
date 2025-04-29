@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>World Birth Rates</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+</head>
+
+<body>
+
+    <div class="container mt-4">
+
+        <div class="card">
+
+            <div class="card-header bg-primary text-white">
+
+                <h2 class="mb-0">World Birth Rates</h2>
+
+            </div>
+
+            
+
+            <div class="card-body">
+
+                {% if dataframe_size > 0 %}
+
+                    <div class="alert alert-success">
+
+                        Showing 100 of {{ dataframe_size }} records available
+
+                    </div>
+
+                    
+
+                    <div class="mb-3">
+
+                        <a href="/refresh" class="btn btn-warning">
+
+                            <i class="bi bi-arrow-clockwise"></i> Refresh Data
+
+                        </a>
+
+                        <small class="text-muted ms-2">
+
+                            Last updated: {{ current_time }}
+
+                        </small>
+
+                    </div>
+
+                    
+
+                    <div class="table-responsive">
+
+                        {{ table|safe }}
+
+                    </div>
+
+                {% else %}
+
+                    <div class="alert alert-danger">
+
+                        <h4>⚠️ No data available</h4>
+
+                        <p>Data could not be loaded from the source.</p>
+
+                        <a href="/refresh" class="btn btn-danger">
+
+                            <i class="bi bi-exclamation-triangle"></i> Retry
+
+                        </a>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
