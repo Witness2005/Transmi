@@ -6,7 +6,7 @@ import asyncio
 
 import io
 
-
+#soy gay
 class DataLoader:
 
     def __init__(self):
