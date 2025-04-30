@@ -8,7 +8,7 @@ from datetime import datetime
 app = FastAPI()
 
 # Mount static files directory
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
@@ -24,7 +24,7 @@ async def home(request: Request):
     current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     countries = await data_loader.get_countries_list()
     
-    return templates.TemplateResponse("dashboard.html", {
+    return templates.TemplateResponse("index.html", {
         "request": request,
         "table": table_html,
         "dataframe_size": dataframe_size,
