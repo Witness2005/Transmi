@@ -4,21 +4,43 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from app.data_loader import DataLoader
 from datetime import datetime
+import os
 
 app = FastAPI()
 
-# Mount static files directory
-# app.mount("/static", StaticFiles(directory="app/static"), name="static")
+# Determine the correct directory structure
+base_dir = os.path.dirname(os.path.abspath(__file__))
+templates_dir = os.path.join(base_dir, "app", "templates")
+static_dir = os.path.join(base_dir, "app", "static")
 
-templates = Jinja2Templates(directory="app/templates")
+# Mount static files directory - uncomment if needed
+# app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Check for templates directory existence
+if os.path.exists(templates_dir):
+    templates = Jinja2Templates(directory=templates_dir)
+else:
+    # Fallback to searching in current directory
+    templates = Jinja2Templates(directory="templates")
 
 data_loader = DataLoader()
 
+@app.on_event("startup")
+async def startup_event():
+    # Pre-load data on startup for better performance
+    await data_loader.fetch_csv()
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    await data_loader.fetch_csv()
+    # Ensure data is loaded
+    if data_loader.dataframe.empty:
+        success = await data_loader.fetch_csv()
+        if not success:
+            return HTMLResponse("<h1>Error loading data. Please try again later.</h1>")
+    
     table, dataframe_size = await data_loader.get_data_html()
     countries = await data_loader.get_countries_list()
+    
     return templates.TemplateResponse(
         "index.html", 
         {
@@ -32,8 +54,11 @@ async def read_root(request: Request):
 
 @app.get("/refresh")
 async def refresh_data():
-    await data_loader.fetch_csv()
-    return {"status": "success", "message": "Data refreshed"}
+    success = await data_loader.fetch_csv()
+    if success:
+        return {"status": "success", "message": "Data refreshed"}
+    else:
+        return {"status": "error", "message": "Failed to refresh data"}
 
 @app.get("/api/yearly-birth-rates")
 async def get_yearly_rates():
@@ -59,21 +84,30 @@ async def get_comparative_data(reference: str = "Colombia", countries: str = Non
     data = await data_loader.get_comparative_data(reference_country=reference, comparison_countries=comparison_countries)
     return data
 
-# Nuevas rutas API para las gráficas adicionales
+# API routes for the additional charts
 @app.get("/api/all-countries-latest-year")
-async def get_all_countries_latest():
-    """Devuelve datos de tasa de natalidad para todos los países en el último año disponible"""
-    data = await data_loader.get_all_countries_latest_year()
+async def get_all_countries_latest(limit: int = 50):
+    """Returns birth rate data for all countries in the latest available year"""
+    data = await data_loader.get_all_countries_latest_year(limit=limit)
     return data
 
 @app.get("/api/continent-trend")
 async def get_continent_trend(continent: str = None):
-    """Devuelve tendencia de tasa de natalidad por continente"""
+    """Returns birth rate trend by continent"""
     data = await data_loader.get_continent_trend(continent_name=continent)
     return data
 
 @app.get("/api/continents-list")
 async def get_continents_list():
-    """Devuelve la lista de continentes disponibles en el dataset"""
+    """Returns list of continents available in the dataset"""
     data = await data_loader.get_continents_list()
     return data
+
+# Debugging endpoint to check if FastAPI is running correctly
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "online",
+        "data_loaded": not data_loader.dataframe.empty,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }

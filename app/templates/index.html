@@ -298,472 +298,704 @@
             dark: 'rgba(33, 37, 41, 0.7)',
             darkBorder: 'rgba(33, 37, 41, 1)',
             secondary: 'rgba(108, 117, 125, 0.7)',
-            secondaryBorder: 'rgba(108, 117, 125, 1)',
+            secondaryBorder: 'rgba(108, 117, 125, 1)'
         };
 
-        // Additional continent colors
+        // Continental color mapping
         const continentColors = {
-            'North America': { bg: 'rgba(255, 99, 132, 0.7)', border: 'rgba(255, 99, 132, 1)' },
-            'South America': { bg: 'rgba(54, 162, 235, 0.7)', border: 'rgba(54, 162, 235, 1)' },
-            'Europe': { bg: 'rgba(255, 206, 86, 0.7)', border: 'rgba(255, 206, 86, 1)' },
-            'Africa': { bg: 'rgba(75, 192, 192, 0.7)', border: 'rgba(75, 192, 192, 1)' },
-            'Asia': { bg: 'rgba(153, 102, 255, 0.7)', border: 'rgba(153, 102, 255, 1)' },
-            'Oceania': { bg: 'rgba(255, 159, 64, 0.7)', border: 'rgba(255, 159, 64, 1)' },
-            'Unknown': { bg: 'rgba(201, 203, 207, 0.7)', border: 'rgba(201, 203, 207, 1)' }
+            'Africa': 'rgba(255, 159, 64, 0.7)',
+            'Asia': 'rgba(255, 99, 132, 0.7)',
+            'Europe': 'rgba(54, 162, 235, 0.7)',
+            'North America': 'rgba(75, 192, 192, 0.7)',
+            'South America': 'rgba(153, 102, 255, 0.7)',
+            'Oceania': 'rgba(255, 205, 86, 0.7)',
+            'Unknown': 'rgba(201, 203, 207, 0.7)'
         };
 
+        // Chart.js global configuration
+        Chart.defaults.font.family = "'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+        Chart.defaults.font.size = 14;
+        Chart.defaults.plugins.tooltip.padding = 10;
+        Chart.defaults.plugins.tooltip.titleFont = { size: 16 };
+        Chart.defaults.plugins.tooltip.bodyFont = { size: 14 };
+        
         // Chart instances
-        let globalTrendChart, topCountriesChart, comparisonChart, countryTrendChart, 
-            continentTrendChart, latestRatesChart;
+        let globalTrendChart;
+        let topCountriesChart;
+        let comparisonChart;
+        let countryTrendChart;
+        let continentTrendChart;
+        let latestRatesChart;
+
+        // Chart types for toggle functionality
+        let latestRatesChartType = 'bar'; // Default chart type
+
+        // Available years in the dataset
+        let availableYears = [];
         
-        // Chart type for latest rates (bar or horizontal bar)
-        let latestRatesChartType = 'bar';
-        
-        // Helper functions
+        // Utility functions
+        function formatBirthRate(value) {
+            return parseFloat(value).toFixed(2);
+        }
+
         function showLoader(id) {
-            document.getElementById(id).style.display = 'block';
+            $(`#${id}`).show();
         }
-        
+
         function hideLoader(id) {
-            document.getElementById(id).style.display = 'none';
+            $(`#${id}`).hide();
         }
 
-        function generateColorArray(count) {
-            const colors = [];
-            const baseColors = [
-                'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 
-                'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
-                'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
-                'rgba(201, 203, 207, 0.7)', 'rgba(255, 99, 132, 0.7)'
-            ];
-            const baseBorders = [
-                'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 
-                'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)',
-                'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
-                'rgba(201, 203, 207, 1)', 'rgba(255, 99, 132, 1)'
-            ];
-            
-            for (let i = 0; i < count; i++) {
-                colors.push({
-                    bg: baseColors[i % baseColors.length],
-                    border: baseBorders[i % baseBorders.length]
-                });
+        function getRandomColor() {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
             }
-            return colors;
+            const rgb = hexToRgb(color);
+            return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.7)`;
         }
 
-        // Initialize charts
-        async function initCharts() {
-            // Initialize all chart canvases
-            globalTrendChart = new Chart(document.getElementById('globalTrendChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Average Global Birth Rate by Year'
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Year'
-                            }
-                        }
-                    }
-                }
-            });
-
-            topCountriesChart = new Chart(document.getElementById('topCountriesChart').getContext('2d'), {
-                type: 'bar',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    indexAxis: 'y',
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Countries with Highest Birth Rates'
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        }
-                    }
-                }
-            });
-
-            comparisonChart = new Chart(document.getElementById('comparisonChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Birth Rate Comparison with Colombia'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Year'
-                            }
-                        }
-                    }
-                }
-            });
-
-            countryTrendChart = new Chart(document.getElementById('countryTrendChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Birth Rate Trend for Colombia'
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Year'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Initialize new continent trend chart
-            continentTrendChart = new Chart(document.getElementById('continentTrendChart').getContext('2d'), {
-                type: 'line',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Birth Rate Trends by Continent'
-                        },
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Year'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Initialize latest rates chart
-            latestRatesChart = new Chart(document.getElementById('latestRatesChart').getContext('2d'), {
-                type: 'bar',
-                data: { labels: [], datasets: [] },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Latest Birth Rates by Country'
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            title: {
-                                display: true,
-                                text: 'Country'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Birth Rate'
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Load all data
-            await loadGlobalTrend();
-            await loadTopCountries();
-            await loadComparisonData();
-            await loadCountryTrend('Colombia');
-            await loadYearOptions();
-            await loadContinentTrend();
-            await loadLatestRates();
-            updateStats();
+        function hexToRgb(hex) {
+            // Remove the # if present
+            hex = hex.replace('#', '');
+            
+            // Parse r, g, b values
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            
+            return { r, g, b };
         }
 
-        // Load global trend data
-        async function loadGlobalTrend() {
+        // Initialize charts on document ready
+        $(document).ready(function() {
+            // Load and initialize all charts
+            loadGlobalTrend();
+            loadTopCountries();
+            loadCountryTrend('Colombia');
+            loadComparisonData('Colombia', ['Brazil', 'United States', 'Spain']);
+            loadContinentTrends();
+            loadLatestBirthRates(50);
+            
+            // Load available years for the year selector
+            loadAvailableYears();
+            
+            // Load continents list for the continent buttons
+            loadContinentsList();
+            
+            // Update quick stats
+            updateQuickStats();
+            
+            // Set up event listeners
+            setupEventListeners();
+        });
+
+        // Event listeners setup
+        function setupEventListeners() {
+            // Refresh button
+            $('#refreshBtn').click(function() {
+                $.get('/refresh', function(data) {
+                    if (data.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Failed to refresh data: ' + data.message);
+                    }
+                });
+            });
+            
+            // Highest/Lowest toggle for top countries chart
+            $('#highestBtn').click(function() {
+                $(this).addClass('active');
+                $('#lowestBtn').removeClass('active');
+                loadTopCountries(false, $('#yearSelector').val());
+            });
+            
+            $('#lowestBtn').click(function() {
+                $(this).addClass('active');
+                $('#highestBtn').removeClass('active');
+                loadTopCountries(true, $('#yearSelector').val());
+            });
+            
+            // Year selector
+            $('#yearSelector').change(function() {
+                const lowest = $('#lowestBtn').hasClass('active');
+                loadTopCountries(lowest, $(this).val());
+            });
+            
+            // Country selector
+            $('#countrySelector').change(function() {
+                loadCountryTrend($(this).val());
+            });
+            
+            // Country comparison selector
+            $('#countryCompareSelector').change(function() {
+                const selectedCountries = $(this).val() || [];
+                loadComparisonData('Colombia', selectedCountries);
+            });
+            
+            // Continent filter buttons (handled dynamically after loading)
+            
+            // Country limit selector
+            $('#countLimitSelector').change(function() {
+                loadLatestBirthRates($(this).val());
+            });
+            
+            // Toggle chart type
+            $('#toggleChartType').click(function() {
+                latestRatesChartType = latestRatesChartType === 'bar' ? 'horizontalBar' : 'bar';
+                $(this).find('i').toggleClass('fa-chart-bar fa-chart-line');
+                loadLatestBirthRates($('#countLimitSelector').val());
+            });
+        }
+
+        // Chart loading functions
+        function loadGlobalTrend() {
             showLoader('globalTrendLoader');
-            try {
-                const response = await fetch('/api/yearly-birth-rates');
-                const data = await response.json();
+            
+            $.get('/api/yearly-birth-rates', function(data) {
+                hideLoader('globalTrendLoader');
                 
                 const years = data.map(item => item.Year);
-                // Find the birth rate column
-                const birthRateKey = Object.keys(data[0]).find(key => 
-                    key !== 'Year' && (key.includes('birth') || key.includes('Birth') || key.includes('Rate') || key.includes('rate'))
-                );
-                const rates = data.map(item => item[birthRateKey]);
+                const rates = data.map(item => {
+                    // Find the birth rate column (it might have different names)
+                    const keys = Object.keys(item);
+                    const rateKey = keys.find(key => key !== 'Year');
+                    return item[rateKey];
+                });
                 
-                globalTrendChart.data.labels = years;
-                globalTrendChart.data.datasets = [{
-                    label: 'Average Birth Rate',
-                    data: rates,
-                    backgroundColor: colorScheme.primary,
-                    borderColor: colorScheme.primaryBorder,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    tension: 0.3
-                }];
-                globalTrendChart.update();
-            } catch (error) {
-                console.error('Error loading global trend data:', error);
-            } finally {
-                hideLoader('globalTrendLoader');
-            }
+                const ctx = document.getElementById('globalTrendChart').getContext('2d');
+                
+                if (globalTrendChart) {
+                    globalTrendChart.destroy();
+                }
+                
+                globalTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: [{
+                            label: 'Global Average Birth Rate',
+                            data: rates,
+                            backgroundColor: colorScheme.primary,
+                            borderColor: colorScheme.primaryBorder,
+                            borderWidth: 2,
+                            tension: 0.1,
+                            pointRadius: 3,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Birth Rate (per 1,000 population)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Global Average Birth Rate Trend'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Birth Rate: ${formatBirthRate(context.raw)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         }
 
-        // Load top countries
-        async function loadTopCountries(lowest = false, year = null) {
+        function loadTopCountries(lowest = false, year = null) {
             showLoader('topCountriesLoader');
-            try {
-                const url = `/api/top-countries?lowest=${lowest}${year ? `&year=${year}` : ''}`;
-                const response = await fetch(url);
-                const data = await response.json();
+            
+            const url = '/api/top-countries?lowest=' + lowest + (year ? '&year=' + year : '');
+            
+            $.get(url, function(data) {
+                hideLoader('topCountriesLoader');
                 
-                // Find country and birth rate columns
-                const countryKey = Object.keys(data[0]).find(key => 
-                    ['Country', 'Entity', 'Nation', 'Country Name'].includes(key)
-                );
-                const birthRateKey = Object.keys(data[0]).find(key => 
-                    key !== countryKey && (key.includes('birth') || key.includes('Birth') || key.includes('Rate') || key.includes('rate'))
-                );
+                // Find the keys for country and birth rate
+                const keys = Object.keys(data[0]);
+                const countryKey = keys.find(key => key !== 'Year' && key !== 'Continent');
+                const rateKey = keys.find(key => key !== countryKey && key !== 'Year' && key !== 'Continent');
                 
                 const countries = data.map(item => item[countryKey]);
-                const rates = data.map(item => item[birthRateKey]);
+                const rates = data.map(item => item[rateKey]);
                 
-                topCountriesChart.data.labels = countries;
-                topCountriesChart.data.datasets = [{
-                    label: 'Birth Rate',
-                    data: rates,
-                    backgroundColor: lowest ? colorScheme.danger : colorScheme.success,
-                    borderColor: lowest ? colorScheme.dangerBorder : colorScheme.successBorder,
-                    borderWidth: 1
-                }];
+                const ctx = document.getElementById('topCountriesChart').getContext('2d');
                 
-                topCountriesChart.options.plugins.title.text = `Countries with ${lowest ? 'Lowest' : 'Highest'} Birth Rates${year ? ` (${year})` : ''}`;
-                topCountriesChart.update();
-                
-                // Update stats
-                if (!year && !lowest) {
-                    document.getElementById('highestRate').textContent = `${countries[0]} (${rates[0].toFixed(1)})`;
+                if (topCountriesChart) {
+                    topCountriesChart.destroy();
                 }
-                if (!year && lowest) {
-                    document.getElementById('lowestRate').textContent = `${countries[0]} (${rates[0].toFixed(1)})`;
-                }
-            } catch (error) {
-                console.error('Error loading top countries data:', error);
-            } finally {
-                hideLoader('topCountriesLoader');
-            }
+                
+                topCountriesChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: countries,
+                        datasets: [{
+                            label: lowest ? 'Lowest Birth Rates' : 'Highest Birth Rates',
+                            data: rates,
+                            backgroundColor: lowest ? colorScheme.danger : colorScheme.success,
+                            borderColor: lowest ? colorScheme.dangerBorder : colorScheme.successBorder,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',  // Horizontal bar chart
+                        scales: {
+                            x: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Birth Rate (per 1,000 population)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: (lowest ? 'Countries with Lowest Birth Rates' : 'Countries with Highest Birth Rates') + 
+                                      (year ? ' in ' + year : ' (Latest Available Data)')
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Birth Rate: ${formatBirthRate(context.raw)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         }
 
-        // Load comparison data with Colombia
-        async function loadComparisonData(selectedCountries = ['Brazil', 'Peru', 'Ecuador', 'Venezuela']) {
+        function loadComparisonData(referenceCountry, comparisonCountries) {
             showLoader('comparisonLoader');
-            try {
-                const url = `/api/comparative-data?reference=Colombia&countries=${selectedCountries.join(',')}`;
-                const response = await fetch(url);
-                const data = await response.json();
+            
+            let url = '/api/comparative-data?reference=' + referenceCountry;
+            if (comparisonCountries && comparisonCountries.length > 0) {
+                url += '&countries=' + comparisonCountries.join(',');
+            }
+            
+            $.get(url, function(data) {
+                hideLoader('comparisonLoader');
                 
-                // Generate colors for each country
-                const colors = [
-                    { bg: colorScheme.info, border: colorScheme.infoBorder },
-                    { bg: colorScheme.success, border: colorScheme.successBorder },
-                    { bg: colorScheme.warning, border: colorScheme.warningBorder },
-                    { bg: colorScheme.danger, border: colorScheme.dangerBorder },
-                    { bg: 'rgba(153, 102, 255, 0.7)', border: 'rgba(153, 102, 255, 1)' }
-                ];
-                
-                // Get all years from Colombia data
-                const allYears = data['Colombia'].map(item => item.Year);
-                
-                // Create datasets for each country
                 const datasets = [];
-                let colorIndex = 0;
+                const years = new Set();
                 
-                for (const country in data) {
-                    // Find the birth rate column
-                    const birthRateKey = Object.keys(data[country][0]).find(key => 
-                        key !== 'Year' && (key.includes('birth') || key.includes('Birth') || key.includes('Rate') || key.includes('rate'))
-                    );
+                // Process each country's data
+                Object.keys(data).forEach(country => {
+                    const countryData = data[country];
+                    const dataPoints = [];
                     
-                    const countryData = data[country].map(item => ({
-                        year: item.Year,
-                        rate: item[birthRateKey]
-                    }));
+                    // Get birth rate column
+                    const keys = Object.keys(countryData[0]);
+                    const rateKey = keys.find(key => key !== 'Year');
                     
-                    // Sort data by year
-                    countryData.sort((a, b) => a.year - b.year);
+                    // Collect data points and years
+                    countryData.forEach(item => {
+                        years.add(item.Year);
+                        dataPoints.push({
+                            x: item.Year,
+                            y: item[rateKey]
+                        });
+                    });
                     
-                    // Create dataset
-                    const color = country === 'Colombia' ? 
-                        { bg: colorScheme.primary, border: colorScheme.primaryBorder } : 
-                        colors[colorIndex % colors.length];
+                    // Create a dataset for this country
+                    const isReference = country === referenceCountry;
+                    const color = isReference ? colorScheme.info : getRandomColor();
+                    const borderColor = isReference ? colorScheme.infoBorder : color.replace('0.7', '1');
                     
                     datasets.push({
                         label: country,
-                        data: countryData.map(item => item.rate),
-                        backgroundColor: color.bg,
-                        borderColor: color.border,
-                        borderWidth: country === 'Colombia' ? 3 : 2,
-                        fill: false,
-                        tension: 0.3,
-                        pointRadius: country === 'Colombia' ? 4 : 3
+                        data: dataPoints,
+                        backgroundColor: color,
+                        borderColor: borderColor,
+                        borderWidth: isReference ? 3 : 2,
+                        tension: 0.1,
+                        pointRadius: isReference ? 5 : 3,
+                        pointHoverRadius: isReference ? 7 : 5,
+                        order: isReference ? 0 : 1  // Make reference country appear on top
                     });
-                    
-                    if (country !== 'Colombia') {
-                        colorIndex++;
-                    }
+                });
+                
+                // Sort years and convert to array
+                const sortedYears = Array.from(years).sort();
+                
+                const ctx = document.getElementById('comparisonChart').getContext('2d');
+                
+                if (comparisonChart) {
+                    comparisonChart.destroy();
                 }
                 
-                comparisonChart.data.labels = allYears;
-                comparisonChart.data.datasets = datasets;
-                comparisonChart.update();
-                
-            } catch (error) {
-                console.error('Error loading comparison data:', error);
-            } finally {
-                hideLoader('comparisonLoader');
-            }
+                comparisonChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedYears,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Birth Rate (per 1,000 population)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Birth Rate Comparison: ${referenceCountry} vs Other Countries`
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${formatBirthRate(context.raw.y)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         }
 
-        // Load country trend
-        async function loadCountryTrend(countryName) {
+        function loadCountryTrend(countryName) {
             showLoader('countryTrendLoader');
-            try {
-                const response = await fetch(`/api/country-trend/${encodeURIComponent(countryName)}`);
-                const data = await response.json();
+            
+            $.get('/api/country-trend/' + countryName, function(data) {
+                hideLoader('countryTrendLoader');
+                
+                // Find the birth rate column
+                const keys = Object.keys(data[0]);
+                const rateKey = keys.find(key => key !== 'Year');
                 
                 const years = data.map(item => item.Year);
-                // Find the birth rate column
-                const birthRateKey = Object.keys(data[0]).find(key => 
-                    key !== 'Year' && (key.includes('birth') || key.includes('Birth') || key.includes('Rate') || key.includes('rate'))
-                );
-                const rates = data.map(item => item[birthRateKey]);
+                const rates = data.map(item => item[rateKey]);
                 
-                countryTrendChart.data.labels = years;
-                countryTrendChart.data.datasets = [{
-                    label: `${countryName} Birth Rate`,
-                    data: rates,
-                    backgroundColor: colorScheme.warning,
-                    borderColor: colorScheme.warningBorder,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    tension: 0.3
-                }];
-                countryTrendChart.options.plugins.title.text = `Birth Rate Trend for ${countryName}`;
-                countryTrendChart.update();
-            } catch (error) {
-                console.error(`Error loading trend for ${countryName}:`, error);
-            } finally {
-                hideLoader('countryTrendLoader');
-            }
+                const ctx = document.getElementById('countryTrendChart').getContext('2d');
+                
+                if (countryTrendChart) {
+                    countryTrendChart.destroy();
+                }
+                
+                countryTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: [{
+                            label: countryName + ' Birth Rate',
+                            data: rates,
+                            backgroundColor: colorScheme.warning,
+                            borderColor: colorScheme.warningBorder,
+                            borderWidth: 2,
+                            tension: 0.1,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Birth Rate (per 1,000 population)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `${countryName} Birth Rate Trend Over Time`
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Birth Rate: ${formatBirthRate(context.raw)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
         }
 
-        // Load continent trend
-        async function loadContinentTrend(continent = null) {
+        function loadContinentTrends(continent = 'all') {
             showLoader('continentTrendLoader');
-            try {
-                // First, load available continents for the buttons
-                if (!continent) {
-                    const continentsResponse = await fetch('/api/continents-list');
-                    const continents = await continentsResponse.json();
+            
+            $.get('/api/continent-trend' + (continent !== 'all' ? '?continent=' + continent : ''), function(data) {
+                hideLoader('continentTrendLoader');
+                
+                const datasets = [];
+                const years = new Set();
+                
+                // Process each continent's data
+                Object.keys(data).forEach(continent => {
+                    const continentData = data[continent];
+                    if (!continentData || continentData.length === 0) return;
                     
-                    // Add continent buttons
-                    const continentButtons = document.getElementById('continentButtons');
-                    // Clear existing buttons except the "All" button
-                    const allButton = continentButtons.querySelector('[data-continent="all"]');
-                    continentButtons.innerHTML = '';
-                    continentButtons.appendChild(allButton);
+                    const dataPoints = [];
                     
-                    continents.forEach(cont => {
-                        const button = document.createElement('button');
-                        button.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'continent-btn');
-                        button.dataset.continent = cont;
-                        button.textContent = cont;
-                        button.addEventListener('click', function() {
-                            // Remove active class from all buttons
-                            document.querySelectorAll('.continent-btn').forEach(btn => {
-                                btn.classList.remove('active');
-                            });
-                            // Add active class to clicked button
-                            this.classList.add('active');
-                            // Load continent data
-                            if (this.dataset.continent === 'all') {
-                                loadContinentTrend();
-                            } else {
-                                loadContinentTrend(this.dataset.continent);
-                            }
+                    // Get birth rate column
+                    const keys = Object.keys(continentData[0]);
+                    const rateKey = keys.find(key => key !== 'Year');
+                    
+                    // Collect data points and years
+                    continentData.forEach(item => {
+                        years.add(item.Year);
+                        dataPoints.push({
+                            x: item.Year,
+                            y: item[rateKey]
                         });
+                    });
+                    
+                    // Create a dataset for this continent
+                    const color = continentColors[continent] || getRandomColor();
+                    
+                    datasets.push({
+                        label: continent,
+                        data: dataPoints,
+                        backgroundColor: color,
+                        borderColor: color.replace('0.7', '1'),
+                        borderWidth: 2,
+                        tension: 0.1,
+                        pointRadius: 2,
+                        pointHoverRadius: 4
+                    });
+                });
+                
+                // Sort years and convert to array
+                const sortedYears = Array.from(years).sort();
+                
+                const ctx = document.getElementById('continentTrendChart').getContext('2d');
+                
+                if (continentTrendChart) {
+                    continentTrendChart.destroy();
+                }
+                
+                continentTrendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {labels: sortedYears,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: 'Birth Rate (per 1,000 population)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: continent !== 'all' ? `Birth Rate Trends: ${continent}` : 'Birth Rate Trends by Continent'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${formatBirthRate(context.raw.y)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function loadLatestBirthRates(limit = 50) {
+            showLoader('latestRatesLoader');
+            
+            $.get('/api/all-countries-latest-year?limit=' + limit, function(data) {
+                hideLoader('latestRatesLoader');
+                
+                // Find the country and birth rate columns
+                const keys = Object.keys(data[0]);
+                const countryKey = keys.find(key => key !== 'Year' && key !== 'Continent');
+                const rateKey = keys.find(key => key !== countryKey && key !== 'Year' && key !== 'Continent');
+                
+                const countries = data.map(item => item[countryKey]);
+                const rates = data.map(item => item[rateKey]);
+                
+                const ctx = document.getElementById('latestRatesChart').getContext('2d');
+                
+                if (latestRatesChart) {
+                    latestRatesChart.destroy();
+                }
+                
+                latestRatesChart = new Chart(ctx, {
+                    type: latestRatesChartType === 'bar' ? 'bar' : 'line',
+                    data: {
+                        labels: countries,
+                        datasets: [{
+                            label: 'Latest Birth Rate',
+                            data: rates,
+                            backgroundColor: colorScheme.secondary,
+                            borderColor: colorScheme.secondaryBorder,
+                            borderWidth: latestRatesChartType === 'bar' ? 1 : 2,
+                            tension: 0.1,
+                            pointRadius: latestRatesChartType === 'bar' ? 0 : 3,
+                            pointHoverRadius: latestRatesChartType === 'bar' ? 0 : 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: latestRatesChartType === 'bar' ? 'y' : 'x',  // Horizontal bar if bar chart
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                title: {
+                                    display: true,
+                                    text: latestRatesChartType === 'bar' ? 'Country' : 'Birth Rate (per 1,000 population)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: latestRatesChartType === 'bar' ? 'Birth Rate (per 1,000 population)' : 'Country'
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Latest Available Birth Rates by Country' + (limit > 0 ? ` (Top ${limit})` : '')
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Birth Rate: ${formatBirthRate(context.raw)}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Utility functions for data setup
+        function loadAvailableYears() {
+            $.get('/api/yearly-birth-rates', function(data) {
+                const years = data.map(item => item.Year);
+                const yearSelector = $('#yearSelector');
+                
+                // Clear existing options
+                yearSelector.empty();
+                yearSelector.append('<option value="">Latest Available</option>');
+                
+                // Add year options in descending order
+                years.sort((a, b) => b - a).forEach(year => {
+                    yearSelector.append(`<option value="${year}">${year}</option>`);
+                });
+                
+                // Store available years
+                availableYears = years;
+            });
+        }
+
+        function loadContinentsList() {
+            $.get('/api/continents-list', function(data) {
+                const continentButtons = $('#continentButtons');
+                
+                // Add continent buttons
+                data.forEach(continent => {
+                    continentButtons.append(
+                        `<button class="btn btn-sm btn-outline-primary continent-btn" data-continent="${continent}">${continent}</button>`
+                    );
+                });
+                
+                // Set up continent button click event
+                $('.continent-btn').click(function() {
+                    $('.continent-btn').removeClass('active');
+                    $(this).addClass('active');
+                    loadContinentTrends($(this).data('continent'));
+                });
+            });
+        }
+
+        function updateQuickStats() {
+            // Update total records - already set during initialization
+            
+            // Update total countries
+            $.get('/api/countries-list', function(data) {
+                $('#totalCountries').text(data.length);
+            });
+            
+            // Update highest birth rate country
+            $.get('/api/top-countries?lowest=false&top_n=1', function(data) {
+                if (data.length > 0) {
+                    const keys = Object.keys(data[0]);
+                    const countryKey = keys.find(key => key !== 'Year' && key !== 'Continent');
+                    const rateKey = keys.find(key => key !== countryKey && key !== 'Year' && key !== 'Continent');
+                    
+                    $('#highestRate').text(data[0][countryKey] + ' (' + formatBirthRate(data[0][rateKey]) + ')');
+                }
+            });
+            
+            // Update lowest birth rate country
+            $.get('/api/top-countries?lowest=true&top_n=1', function(data) {
+                if (data.length > 0) {
+                    const keys = Object.keys(data[0]);
+                    const countryKey = keys.find(key => key !== 'Year' && key !== 'Continent');
+                    const rateKey = keys.find(key => key !== countryKey && key !== 'Year' && key !== 'Continent');
+                    
+                    $('#lowestRate').text(data[0][countryKey] + ' (' + formatBirthRate(data[0][rateKey]) + ')');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
