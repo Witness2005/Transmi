@@ -52,6 +52,14 @@
             max-height: 500px;
             overflow-y: auto;
         }
+        .continent-btn {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .continent-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -211,15 +219,58 @@
             </div>
         </div>
 
-        <!-- Raw Data Table -->
+        <!-- Third Row of Charts: Continent Trends and Latest Birth Rates -->
         <div class="row mt-4">
-            <div class="col-12">
+            <!-- Continental Birth Rate Trends -->
+            <div class="col-md-6">
                 <div class="card">
                     <div class="card-header bg-dark text-white">
-                        <i class="fas fa-table"></i> Raw Data (First 100 Records)
+                        <i class="fas fa-globe-americas"></i> Continental Birth Rate Trends
                     </div>
-                    <div class="card-body data-table">
-                        {{ table|safe }}
+                    <div class="card-body">
+                        <div class="chart-options continent-filter">
+                            <div id="continentButtons" class="d-flex flex-wrap mb-3">
+                                <button class="btn btn-sm btn-outline-primary continent-btn active" data-continent="all">All Continents</button>
+                                <!-- Continent buttons will be added here dynamically -->
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="continentTrendChart"></canvas>
+                            <div id="continentTrendLoader" class="loader"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Birth Rates Map -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <i class="fas fa-map-marked-alt"></i> Latest Birth Rates by Country
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-options">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <label>Showing top:</label>
+                                    <select id="countLimitSelector" class="form-select form-select-sm d-inline-block w-auto">
+                                        <option value="20">20 countries</option>
+                                        <option value="50" selected>50 countries</option>
+                                        <option value="100">100 countries</option>
+                                        <option value="0">All countries</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary" id="toggleChartType">
+                                        <i class="fas fa-chart-bar"></i> Toggle Chart Type
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="latestRatesChart"></canvas>
+                            <div id="latestRatesLoader" class="loader"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -244,10 +295,29 @@
             warningBorder: 'rgba(255, 193, 7, 1)',
             danger: 'rgba(220, 53, 69, 0.7)',
             dangerBorder: 'rgba(220, 53, 69, 1)',
+            dark: 'rgba(33, 37, 41, 0.7)',
+            darkBorder: 'rgba(33, 37, 41, 1)',
+            secondary: 'rgba(108, 117, 125, 0.7)',
+            secondaryBorder: 'rgba(108, 117, 125, 1)',
+        };
+
+        // Additional continent colors
+        const continentColors = {
+            'North America': { bg: 'rgba(255, 99, 132, 0.7)', border: 'rgba(255, 99, 132, 1)' },
+            'South America': { bg: 'rgba(54, 162, 235, 0.7)', border: 'rgba(54, 162, 235, 1)' },
+            'Europe': { bg: 'rgba(255, 206, 86, 0.7)', border: 'rgba(255, 206, 86, 1)' },
+            'Africa': { bg: 'rgba(75, 192, 192, 0.7)', border: 'rgba(75, 192, 192, 1)' },
+            'Asia': { bg: 'rgba(153, 102, 255, 0.7)', border: 'rgba(153, 102, 255, 1)' },
+            'Oceania': { bg: 'rgba(255, 159, 64, 0.7)', border: 'rgba(255, 159, 64, 1)' },
+            'Unknown': { bg: 'rgba(201, 203, 207, 0.7)', border: 'rgba(201, 203, 207, 1)' }
         };
 
         // Chart instances
-        let globalTrendChart, topCountriesChart, comparisonChart, countryTrendChart;
+        let globalTrendChart, topCountriesChart, comparisonChart, countryTrendChart, 
+            continentTrendChart, latestRatesChart;
+        
+        // Chart type for latest rates (bar or horizontal bar)
+        let latestRatesChartType = 'bar';
         
         // Helper functions
         function showLoader(id) {
@@ -256,6 +326,30 @@
         
         function hideLoader(id) {
             document.getElementById(id).style.display = 'none';
+        }
+
+        function generateColorArray(count) {
+            const colors = [];
+            const baseColors = [
+                'rgba(255, 99, 132, 0.7)', 'rgba(54, 162, 235, 0.7)', 
+                'rgba(255, 206, 86, 0.7)', 'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)', 'rgba(255, 159, 64, 0.7)',
+                'rgba(201, 203, 207, 0.7)', 'rgba(255, 99, 132, 0.7)'
+            ];
+            const baseBorders = [
+                'rgba(255, 99, 132, 1)', 'rgba(54, 162, 235, 1)', 
+                'rgba(255, 206, 86, 1)', 'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)', 'rgba(255, 159, 64, 1)',
+                'rgba(201, 203, 207, 1)', 'rgba(255, 99, 132, 1)'
+            ];
+            
+            for (let i = 0; i < count; i++) {
+                colors.push({
+                    bg: baseColors[i % baseColors.length],
+                    border: baseBorders[i % baseBorders.length]
+                });
+            }
+            return colors;
         }
 
         // Initialize charts
@@ -381,12 +475,80 @@
                 }
             });
 
+            // Initialize new continent trend chart
+            continentTrendChart = new Chart(document.getElementById('continentTrendChart').getContext('2d'), {
+                type: 'line',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Birth Rate Trends by Continent'
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Birth Rate'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Initialize latest rates chart
+            latestRatesChart = new Chart(document.getElementById('latestRatesChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: [], datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Latest Birth Rates by Country'
+                        },
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Country'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Birth Rate'
+                            }
+                        }
+                    }
+                }
+            });
+
             // Load all data
             await loadGlobalTrend();
             await loadTopCountries();
             await loadComparisonData();
             await loadCountryTrend('Colombia');
             await loadYearOptions();
+            await loadContinentTrend();
+            await loadLatestRates();
             updateStats();
         }
 
@@ -570,75 +732,38 @@
             }
         }
 
-        // Load year options for the selector
-        async function loadYearOptions() {
+        // Load continent trend
+        async function loadContinentTrend(continent = null) {
+            showLoader('continentTrendLoader');
             try {
-                const response = await fetch('/api/yearly-birth-rates');
-                const data = await response.json();
-                
-                const years = [...new Set(data.map(item => item.Year))].sort((a, b) => b - a);
-                const yearSelector = document.getElementById('yearSelector');
-                
-                years.forEach(year => {
-                    const option = document.createElement('option');
-                    option.value = year;
-                    option.textContent = year;
-                    yearSelector.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading year options:', error);
-            }
-        }
-
-        // Update dashboard stats
-        function updateStats() {
-            const countrySelector = document.getElementById('countrySelector');
-            document.getElementById('totalCountries').textContent = countrySelector.options.length;
-        }
-
-        // Event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            initCharts();
-            
-            // Refresh button
-            document.getElementById('refreshBtn').addEventListener('click', async () => {
-                await fetch('/refresh');
-                window.location.reload();
-            });
-            
-            // Highest/Lowest buttons
-            document.getElementById('highestBtn').addEventListener('click', function() {
-                this.classList.add('active');
-                document.getElementById('lowestBtn').classList.remove('active');
-                const yearValue = document.getElementById('yearSelector').value;
-                loadTopCountries(false, yearValue || null);
-            });
-            
-            document.getElementById('lowestBtn').addEventListener('click', function() {
-                this.classList.add('active');
-                document.getElementById('highestBtn').classList.remove('active');
-                const yearValue = document.getElementById('yearSelector').value;
-                loadTopCountries(true, yearValue || null);
-            });
-            
-            // Year selector
-            document.getElementById('yearSelector').addEventListener('change', function() {
-                const isLowest = document.getElementById('lowestBtn').classList.contains('active');
-                loadTopCountries(isLowest, this.value || null);
-            });
-            
-            // Country selector
-            document.getElementById('countrySelector').addEventListener('change', function() {
-                loadCountryTrend(this.value);
-            });
-            
-            // Country comparison selector
-            const countryCompareSelector = document.getElementById('countryCompareSelector');
-            $(countryCompareSelector).on('change', function() {
-                const selectedCountries = Array.from(this.selectedOptions).map(opt => opt.value);
-                loadComparisonData(selectedCountries.length ? selectedCountries : ['Brazil', 'Peru', 'Ecuador', 'Venezuela']);
-            });
-        });
-    </script>
-</body>
-</html>
+                // First, load available continents for the buttons
+                if (!continent) {
+                    const continentsResponse = await fetch('/api/continents-list');
+                    const continents = await continentsResponse.json();
+                    
+                    // Add continent buttons
+                    const continentButtons = document.getElementById('continentButtons');
+                    // Clear existing buttons except the "All" button
+                    const allButton = continentButtons.querySelector('[data-continent="all"]');
+                    continentButtons.innerHTML = '';
+                    continentButtons.appendChild(allButton);
+                    
+                    continents.forEach(cont => {
+                        const button = document.createElement('button');
+                        button.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'continent-btn');
+                        button.dataset.continent = cont;
+                        button.textContent = cont;
+                        button.addEventListener('click', function() {
+                            // Remove active class from all buttons
+                            document.querySelectorAll('.continent-btn').forEach(btn => {
+                                btn.classList.remove('active');
+                            });
+                            // Add active class to clicked button
+                            this.classList.add('active');
+                            // Load continent data
+                            if (this.dataset.continent === 'all') {
+                                loadContinentTrend();
+                            } else {
+                                loadContinentTrend(this.dataset.continent);
+                            }
+                        });
