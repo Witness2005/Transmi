@@ -21,7 +21,7 @@ if os.path.exists(templates_dir):
     templates = Jinja2Templates(directory=templates_dir)
 else:
     # Fallback to searching in current directory
-    templates = Jinja2Templates(directory="templates")
+    templates = Jinja2Templates(directory=os.path.join(base_dir, "templates"))
 
 data_loader = DataLoader()
 
