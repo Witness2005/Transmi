@@ -36,6 +36,8 @@ This project features a modern architecture using **FastAPI** for a robust, asyn
 * **Chart.js**: JavaScript library for interactive data visualization.
 * **jQuery**: DOM manipulation and AJAX requests.
 
+<img width="1645" height="950" alt="image" src="https://github.com/user-attachments/assets/2e29ca41-3871-45a9-9fce-b2e88e88f633" />
+
 ## 📂 Project Structure
 
 ```text
@@ -49,5 +51,5 @@ This project features a modern architecture using **FastAPI** for a robust, asyn
 ├── requirements.txt      # Project dependencies
 └── README.md             # Project documentation
 
-<img width="1645" height="950" alt="image" src="https://github.com/user-attachments/assets/2e29ca41-3871-45a9-9fce-b2e88e88f633" />
+
 
