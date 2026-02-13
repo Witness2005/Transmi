@@ -8,31 +8,29 @@ import os
 
 app = FastAPI()
 
-# Determine the correct directory structure
 base_dir = os.path.dirname(os.path.abspath(__file__))
 templates_dir = os.path.join(base_dir, "app", "templates")
 static_dir = os.path.join(base_dir, "app", "static")
 
-# Mount static files directory - uncomment if needed
-# app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# Check for templates directory existence
+
+
 if os.path.exists(templates_dir):
     templates = Jinja2Templates(directory=templates_dir)
 else:
-    # Fallback to searching in current directory
+
     templates = Jinja2Templates(directory=os.path.join(base_dir, "templates"))
 
 data_loader = DataLoader()
 
 @app.on_event("startup")
 async def startup_event():
-    # Pre-load data on startup for better performance
+
     await data_loader.fetch_csv()
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    # Ensure data is loaded
+
     if data_loader.dataframe.empty:
         success = await data_loader.fetch_csv()
         if not success:
@@ -84,7 +82,7 @@ async def get_comparative_data(reference: str = "Colombia", countries: str = Non
     data = await data_loader.get_comparative_data(reference_country=reference, comparison_countries=comparison_countries)
     return data
 
-# API routes for the additional charts
+
 @app.get("/api/all-countries-latest-year")
 async def get_all_countries_latest(limit: int = 50):
     """Returns birth rate data for all countries in the latest available year"""
@@ -99,11 +97,11 @@ async def get_continent_trend(continent: str = None):
 
 @app.get("/api/continents-list")
 async def get_continents_list():
-    """Returns list of continents available in the dataset"""
+
     data = await data_loader.get_continents_list()
     return data
 
-# Debugging endpoint to check if FastAPI is running correctly
+
 @app.get("/health")
 async def health_check():
     return {
