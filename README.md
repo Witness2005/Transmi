@@ -1,50 +1,50 @@
 # 🌍 Global Birth Rate Analysis Dashboard
 
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.68%2B-009688)
+![FastAPI](https://img.shields.io/badge/FastAPI-High_Performance-009688)
 ![Pandas](https://img.shields.io/badge/Pandas-Data_Analysis-150458)
 ![Chart.js](https://img.shields.io/badge/Chart.js-Visualization-FF6384)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-## 📖 Descripción
+## 📖 Overview
 
-**Global Birth Rate Analysis Dashboard** es una aplicación web interactiva diseñada para visualizar, analizar y comparar las tasas de natalidad a nivel mundial. Utilizando datos históricos de *Our World in Data*, la aplicación permite a los usuarios explorar tendencias globales, continentales y nacionales.
+**Global Birth Rate Analysis Dashboard** is a high-performance web application designed to visualize, analyze, and compare birth rate trends worldwide. Leveraging historical data from *Our World in Data*, the application provides interactive insights at global, continental, and national levels.
 
-El proyecto implementa una arquitectura moderna utilizando **FastAPI** para un backend de alto rendimiento y **Chart.js** para la renderización de gráficos dinámicos en el frontend. El procesamiento de datos se realiza de manera asíncrona con **Pandas** y **AIOHTTP**.
+This project features a modern architecture using **FastAPI** for a robust, asynchronous backend and **Chart.js** for dynamic, responsive frontend visualizations. Data processing is handled efficiently using **Pandas** and **NumPy**.
 
-## ✨ Características Principales
+## ✨ Key Features
 
-* **📊 Tablero Interactivo:** Visualización de KPIs (registros totales, países analizados, tasas máximas/mínimas).
-* **📈 Análisis de Tendencias:** Gráficos de línea para ver la evolución histórica de la natalidad a nivel global y por continente.
-* **🌍 Comparativa entre Países:** Herramienta para comparar la tasa de natalidad de Colombia (u otro país de referencia) frente a otras naciones.
-* **🏆 Rankings Dinámicos:** Visualización de los países con mayores y menores tasas de natalidad, filtrable por año.
-* **⚡ Carga de Datos Asíncrona:** Obtención y procesamiento de datos CSV en tiempo real sin bloquear el servidor.
-* **📱 Diseño Responsivo:** Interfaz construida con Bootstrap 5, adaptable a diferentes dispositivos.
+* **📊 Interactive Dashboard:** Real-time visualization of KPIs (Total Records, Countries Analyzed, Highest/Lowest Rates).
+* **📈 Trend Analysis:** Comprehensive line charts tracking historical birth rate evolution globally and by continent.
+* **🌍 Comparative Tools:** Compare specific countries (e.g., Colombia vs. others) to analyze regional differences.
+* **🏆 Dynamic Rankings:** Filterable bar charts displaying top and bottom countries by birth rate for any given year.
+* **⚡ Asynchronous Data Loading:** Non-blocking CSV fetching and processing using `aiohttp` for optimal server performance.
+* **📱 Responsive Design:** Built with **Bootstrap 5**, ensuring a seamless experience across desktop and mobile devices.
 
-## 🛠️ Stack Tecnológico
+## 🛠️ Tech Stack
 
 ### Backend
-* **Python**: Lenguaje principal.
-* **FastAPI**: Framework web moderno y rápido para construir APIs.
-* **Pandas & NumPy**: Manipulación y limpieza de datos.
-* **AIOHTTP**: Cliente HTTP asíncrono para la descarga de datasets.
-* **Jinja2**: Motor de plantillas para renderizar el HTML.
+* **Python**: Core programming language.
+* **FastAPI**: Modern, high-performance web framework for building APIs.
+* **Pandas & NumPy**: Data manipulation, cleaning, and statistical analysis.
+* **AIOHTTP**: Asynchronous HTTP client for fetching external datasets.
+* **Jinja2**: Templating engine for server-side rendering.
 
 ### Frontend
-* **HTML5 / CSS3**: Estructura y estilos.
-* **Bootstrap 5**: Framework CSS para el diseño y componentes de UI.
-* **Chart.js**: Librería para la creación de gráficos interactivos.
-* **jQuery**: Manipulación del DOM y peticiones AJAX.
+* **HTML5 / CSS3**: Structure and styling.
+* **Bootstrap 5**: UI framework for responsive layout and components.
+* **Chart.js**: JavaScript library for interactive data visualization.
+* **jQuery**: DOM manipulation and AJAX requests.
 
-## 📂 Estructura del Proyecto
+## 📂 Project Structure
 
 ```text
 ├── app/
 │   ├── __init__.py
-│   ├── data_loader.py    # Lógica de carga y procesamiento de datos (Clase DataLoader)
-│   ├── static/           # Archivos estáticos (CSS, JS, imágenes)
+│   ├── data_loader.py    # Data fetching and processing logic (DataLoader Class)
+│   ├── static/           # Static assets (CSS, JS, images)
 │   └── templates/
-│       └── index.html    # Plantilla principal del Dashboard
-├── main.py               # Punto de entrada de la aplicación FastAPI
-├── requirements.txt      # Dependencias del proyecto
-└── README.md             # Documentación
+│       └── index.html    # Main Dashboard Template
+├── main.py               # FastAPI entry point and route definitions
+├── requirements.txt      # Project dependencies
+└── README.md             # Project documentation
