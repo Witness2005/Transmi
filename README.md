@@ -41,15 +41,12 @@ This project features a modern architecture using **FastAPI** for a robust, asyn
 ## 📂 Project Structure
 
 ```text
-├── app/
-│   ├── __init__.py
-│   ├── data_loader.py    # Data fetching and processing logic (DataLoader Class)
-│   ├── static/           # Static assets (CSS, JS, images)
-│   └── templates/
-│       └── index.html    # Main Dashboard Template
-├── main.py               # FastAPI entry point and route definitions
-├── requirements.txt      # Project dependencies
-└── README.md             # Project documentation
-
-
-
+Transmi/
+├── app/                  # Código fuente de la aplicación
+│   ├── templates/        # Archivos HTML (Frontend)
+│   │   └── index.html
+│   ├── data_loader.py    # Lógica de carga y procesamiento de datos
+│   └── main.py           # Punto de entrada de la API (FastAPI)
+├── README.md             # Documentación del proyecto
+├── render.yaml           # Configuración para despliegue en Render
+└── requirements.txt      # Lista de dependencias
